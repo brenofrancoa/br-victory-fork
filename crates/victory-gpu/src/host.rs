@@ -3319,8 +3319,25 @@ impl Host {
                 drop(order);
                 self.card_sent();
                 self.queue.Signal(&fence, sent)?;
-                fence.SetEventOnCompletion(sent, event)?;
-                WaitForSingleObject(event, INFINITE);
+                // Wait for the GPU to actually finish executing the copy, not
+                // merely for the CPU to submit it. The fence event is set by
+                // the CPU as soon as the command is queued, so waiting on it
+                // alone would let us read before the card is done, causing a
+                // device removal. Spin on GetCompletedValue until the card has
+                // reached our signal, then fall back to the event wait.
+                let mut waited = false;
+                loop {
+                    let completed = unsafe { self.fence.GetCompletedValue() };
+                    if completed >= sent {
+                        waited = true;
+                        break;
+                    }
+                    std::thread::sleep(std::time::Duration::from_micros(100));
+                }
+                if !waited {
+                    fence.SetEventOnCompletion(sent, event)?;
+                    WaitForSingleObject(event, INFINITE);
+                }
                 Ok(after)
             })()
         };
