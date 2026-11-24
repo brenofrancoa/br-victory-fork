@@ -12,18 +12,18 @@ Um fork em andamento do [VIctory](https://github.com/Marvisak/VIctory), uma cama
 
 ## Status deste fork (2026-11-25)
 
-**Ainda não é jogável: de 2,5 a 4 quadros por segundo, e áreas sombreadas estão pretas.**
-Testado em uma máquina: Windows 11, Intel i7-14700KF, NVIDIA RTX 4070 12 GB, 32 GB RAM. O perfil Series X é usado em todo o jogo.
+**Ainda não é jogável de forma estável: texturas carregam no mundo, mas a GPU remove o dispositivo (crash) após alguns segundos de execução na fase de jogabilidade.**
+Testado em uma máquina: Windows 11, Intel i9-12900KF, NVIDIA RTX 3080, 16 GB RAM DDR5. O perfil Series X é usado em todo o jogo.
 
 | Estágio | Estado neste fork |
 |-------|--------------------|
 | Boot, menus, tela inicial | funciona, 30 fps (como upstream) |
 | Cutscene de abertura | reproduz do início ao fim, em ordem, iluminada: cartões de título, cartões de crédito, cenas noturnas e do entardecer |
 | Salvamentos | o jogo salva automaticamente um ponto de controle e o carrega novamente |
-| Primeira cena de jogabilidade (o prólogo) | renderiza: personagens, texturas, céu, exterior iluminado pelo sol; HUD, menu de pausa e input do controle funcionam |
+| Primeira cena de jogabilidade (o prólogo) | renderiza: personagens, texturas, céu, exterior iluminado pelo sol; HUD, menu de pausa e input do controle funcionam; texturas aparecem, mas a GPU é removida (crash) após alguns segundos |
 | Luz na sombra | ausente: a luz refletida com rastreamento de raios do jogo e as sombras com rastreamento de raios de lâmpada e sol não executam ainda, então tudo que o sol não atinge diretamente fica preto |
-| Taxa de quadros no mundo | 2-4 fps: 420-450 ms por frame por padrão, 240-350 ms com os switches mais recentes (`VICTORY_RELAY=2`, ou `VICTORY_LATE_WAIT=3 VICTORY_WIDE_BACK=1 VICTORY_CARD_BUFFERS_MIN_MB=1 VICTORY_CARD_BUFFERS_MB=1024`); começou em 3-6 segundos por frame |
-| Estabilidade | sem travamento de driver ou perda de dispositivo em execuções normais (um travamento introduzido pela atualização wave64 foi encontrado e corrigido: sua forma de barreira para programas de 64 vias agora está desligada a menos que `VICTORY_WAVE_WIDE=1`) |
+| Taxa de quadros no mundo | cerca de 0,9 fps (cerca de 1,1 s por frame) com as otimizações ativas (`VICTORY_SHADER_LOOP_LIMIT=1000`, `VICTORY_LATE_WAIT=1`, `VICTORY_RELAY=1`); começou em 3-6 segundos por frame |
+| Estabilidade | a GPU é removida (device removed) após alguns segundos na fase de jogo quando `VICTORY_RELAY` ou `VICTORY_LATE_WAIT` estão acima do estágio 1; investigar o crash na thread de releio/leitura da memória da placa |
 
 ### O que este fork mudou (resumo)
 
@@ -54,6 +54,7 @@ A maioria das mudanças de velocidade mais recentes fica atrás de interruptores
 - Tudo na sombra está preto (veja acima).
 - O interior da primeira sala de jogabilidade às vezes não é desenhado depois que a cutscene entrega para a jogabilidade.
 - Cerca de 24 GB de memória estão em uso durante a jogabilidade.
+- **Crash da GPU (device removed) na fase de jogo**: após alguns segundos de execução, o dispositivo GPU é removido, encerrando o título. Ocorre especialmente com `VICTORY_RELAY` acima de 1 e com `VICTORY_LATE_WAIT` no estágio 2 ou 3; a causa está na thread de releio/leitura da memória da placa que lê enquanto a GPU ainda escreve. Investigação em andamento.
 - Alguns linters de estilo são desligados para este fork no `Cargo.toml` do workspace até que o código mais novo seja arrumado.
 - Muitas mudanças aqui são específicas para este título e esta GPU, e algumas são marcadas `shortcut:` no código onde aproximam o que o console faz.
 
