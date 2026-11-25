@@ -230,6 +230,9 @@ fn footprint(desc: &ResourceDesc) -> Option<AllocationInfo> {
 /// (and its typeless views) has no PC format: the 24-bit ones stand in.
 pub(crate) fn pc_format(format: u32) -> u32 {
     match format {
+        // Console format 41 = R32_FLOAT (see twin_uav which maps depth formats
+        // to 41). DXGI has no format 41, so map it to R32_FLOAT.
+        41 => 29,
         118 => 45,
         119 => 46,
         120 => 47,
