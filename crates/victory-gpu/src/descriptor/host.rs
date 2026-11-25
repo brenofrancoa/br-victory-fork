@@ -1855,6 +1855,13 @@ fn make(view: &View, at: D3D12_CPU_DESCRIPTOR_HANDLE) -> Option<Kept> {
             };
             // SAFETY: a slot of our heap; the range lies in the host copy.
             unsafe { device.CreateConstantBufferView(Some(&desc), at) };
+            if unsafe { device.GetDeviceRemovedReason() }.is_err() {
+                once!(
+                    address = format_args!("{address:#x}"),
+                    "constant buffer view creation failed on host"
+                );
+                return None;
+            }
             Some(Some(shadow.buffer.clone()))
         }
         View::Shader(resource, desc) => {
@@ -1896,6 +1903,13 @@ fn make(view: &View, at: D3D12_CPU_DESCRIPTOR_HANDLE) -> Option<Kept> {
                         at,
                     )
                 };
+                if unsafe { device.GetDeviceRemovedReason() }.is_err() {
+                    once!(
+                        ?resource,
+                        "shader resource view creation failed on host"
+                    );
+                    return None;
+                }
                 Some(Some(texture.clone()))
             } else if let (Some((data, len)), Some(desc)) =
                 (crate::resource::buffer_bytes(resource), desc)
@@ -1958,6 +1972,13 @@ fn make(view: &View, at: D3D12_CPU_DESCRIPTOR_HANDLE) -> Option<Kept> {
                     at,
                 )
             };
+            if unsafe { device.GetDeviceRemovedReason() }.is_err() {
+                once!(
+                    ?resource,
+                    "unordered access view creation failed on host"
+                );
+                return None;
+            }
             Some(Some(texture.clone()))
         }
         View::Sampler(words) => {
@@ -1969,12 +1990,20 @@ fn make(view: &View, at: D3D12_CPU_DESCRIPTOR_HANDLE) -> Option<Kept> {
             };
             // SAFETY: a slot of our sampler heap.
             unsafe { device.CreateSampler(&desc, at) };
+            if unsafe { device.GetDeviceRemovedReason() }.is_err() {
+                once!(?words, "sampler creation failed on host");
+                return None;
+            }
             Some(None)
         }
         View::ConsoleSampler(words) => {
             let desc = crate::sampler::console(words);
             // SAFETY: a slot of our sampler heap.
             unsafe { device.CreateSampler(&desc, at) };
+            if unsafe { device.GetDeviceRemovedReason() }.is_err() {
+                once!(?words, "console sampler creation failed on host");
+                return None;
+            }
             Some(None)
         }
         View::Placed(unordered, resource, desc) => {
