@@ -1972,13 +1972,13 @@ fn make(view: &View, at: D3D12_CPU_DESCRIPTOR_HANDLE) -> Option<Kept> {
                     at,
                 )
             };
-                if unsafe { device.GetDeviceRemovedReason() }.is_err() {
-                    once!(
-                        ?resource,
-                        "unordered access view creation failed on host"
-                    );
-                    return None;
-                }
+            if unsafe { device.GetDeviceRemovedReason() }.is_err() {
+                once!(
+                    ?resource,
+                    "unordered access view creation failed on host"
+                );
+                return None;
+            }
             Some(Some(texture.clone()))
         }
         View::Sampler(words) => {
