@@ -23,7 +23,7 @@ Testado em uma máquina: Windows 11, Intel i9-12900KF, NVIDIA RTX 3080, 16 GB RA
 | Primeira cena de jogabilidade (o prólogo) | renderiza: personagens, texturas, céu, exterior iluminado pelo sol; HUD, menu de pausa e input do controle funcionam; texturas aparecem, mas a GPU é removida (crash) após alguns segundos |
 | Luz na sombra | ausente: a luz refletida com rastreamento de raios do jogo e as sombras com rastreamento de raios de lâmpada e sol não executam ainda, então tudo que o sol não atinge diretamente fica preto |
 | Taxa de quadros no mundo | cerca de 0,9 fps (cerca de 1,1 s por frame) com as otimizações ativas (`VICTORY_SHADER_LOOP_LIMIT=1000`, `VICTORY_LATE_WAIT=1`, `VICTORY_RELAY=1`); começou em 3-6 segundos por frame |
-| Estabilidade | a GPU é removida (device removed) após alguns segundos na fase de jogo, mesmo com `VICTORY_LATE_WAIT=1` e sem `VICTORY_RELAY`; crash ocorre em `CreateShaderResourceView`/`CreateUnorderedAccessView` com `0x887A0001 (INVALID_CALL)` seguido por `device removed` (`0x887A0005`); investigar formato 41 de textura placed no slot 16677 |
+| Estabilidade | com `VICTORY_SHADER_LOOP_LIMIT=1000` e sem `VICTORY_LATE_WAIT` nem `VICTORY_RELAY` (modo síncrono), o jogo roda sem crash no mundo a cerca de 1.9 fps; com `VICTORY_LATE_WAIT=1` ou `VICTORY_RELAY=1` o dispositivo GPU é removido após alguns segundos; erro `0x887A0001 (INVALID_CALL)` seguido por `0x887A0005 (device removed)` na criação de view de textura (formato 41, slot 16677) |
 
 ### O que este fork mudou (resumo)
 
@@ -54,7 +54,7 @@ A maioria das mudanças de velocidade mais recentes fica atrás de interruptores
 - Tudo na sombra está preto (veja acima).
 - O interior da primeira sala de jogabilidade às vezes não é desenhado depois que a cutscene entrega para a jogabilidade.
 - Cerca de 24 GB de memória estão em uso durante a jogabilidade.
-- **Crash da GPU (device removed) na fase de jogo**: após alguns segundos de execução, o dispositivo GPU é removido, encerrando o título. Ocorre mesmo com `VICTORY_LATE_WAIT=1` e sem `VICTORY_RELAY`; a causa está na criação de views de textura (SRV/UAV) com formato inválido para o host (ex: formato 41 de textura placed no slot 16677), resultando em `0x887A0001 (INVALID_CALL)` seguido por `device removed` (`0x887A0005`). Investigação em andamento.
+- **Crash da GPU (device removed) na fase de jogo**: ocorre com `VICTORY_LATE_WAIT=1` ou `VICTORY_RELAY=1`; não ocorre em modo totalmente síncrono (sem nenhuma das duas opções). A causa está na criação de views de textura (SRV/UAV) com formato inválido para o host (ex: formato 41 de textura placed no slot 16677), resultando em `0x887A0001 (INVALID_CALL)` seguido por `device removed` (`0x887A0005`). Em modo síncrono o jogo roda estável a cerca de 1.9 fps no mundo. Investigação em andamento para permitir `VICTORY_LATE_WAIT` sem crash.
 - Alguns linters de estilo são desligados para este fork no `Cargo.toml` do workspace até que o código mais novo seja arrumado.
 - Muitas mudanças aqui são específicas para este título e esta GPU, e algumas são marcadas `shortcut:` no código onde aproximam o que o console faz.
 
